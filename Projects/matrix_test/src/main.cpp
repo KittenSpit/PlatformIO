@@ -98,7 +98,11 @@ matrix.loadFrame(happy);
   matrix.textScrollSpeed(50);
 
   // add the text
-  const char text[] = "    Hello World!    ";
+  int a;
+  a = 5;
+  
+  char text[] = "    Hello World!    ";
+  
   matrix.textFont(Font_5x7);
   matrix.beginText(0, 1, 0xFFFFFF);
   matrix.println(text);
