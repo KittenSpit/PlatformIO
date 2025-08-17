@@ -2,9 +2,8 @@
 #include "ArduinoGraphics.h"
 #include "Arduino_LED_Matrix.h"
 // david edit
+
 ArduinoLEDMatrix matrix;
-
-
 
 void setup() {
   Serial.begin(9600);
@@ -31,7 +30,7 @@ Serial.println(a);
 // const char text[] = " Hello World! ";
   matrix.textFont(Font_5x7);
   matrix.beginText(0, 1, 0xFFFFFF);
-  matrix.println(a);
+  matrix.print(a);
   matrix.endText(SCROLL_LEFT);
 
   matrix.endDraw();
