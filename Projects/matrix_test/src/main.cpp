@@ -14,14 +14,18 @@ void setup() {
 }
 
 String a;
+float b=152.1234;
+
+
 
 void loop(){
-//  matrix.beginDraw();
+matrix.beginDraw();
 while(Serial.available()) {
 a= Serial.readString();// read the incoming data as string
-Serial.println(a);
 }
- 
+a.trim();
+//a = String(b,4);
+//Serial.println(a);
   matrix.beginDraw();
   matrix.stroke(0xFFFFFFFF);
   matrix.textScrollSpeed(100);
