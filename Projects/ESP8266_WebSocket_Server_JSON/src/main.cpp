@@ -1,11 +1,11 @@
 #include <Arduino.h>
 
 /*
-ESP8266 WebSocket Server with JSON + Broadcast
-- Connects to your Wi-Fi router (station mode only)
+ESP8266 WebSocket Server with JSON + Broadcast + OLED IP display
 - HTTP: http://<ip>/
-- WS: ws://<ip>:81/
-- Requires: arduinoWebSockets, ArduinoJson
+- WS : ws://<ip>:81/
+- OLED: Shows SSID while connecting, then IP + LED state
+- Requires: arduinoWebSockets, ArduinoJson, Adafruit SSD1306, Adafruit GFX
 */
 
 #include <ESP8266WiFi.h>
@@ -14,10 +14,20 @@ ESP8266 WebSocket Server with JSON + Broadcast
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
 
+// ======= NEW: OLED =======
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1 // Reset not used on many ESP8266 boards
+#define OLED_ADDR 0x3C // Most 0.96" displays use 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
 // ======= Wi-Fi credentials =======
 #define STA_SSID "M3000-5B5C"
 #define STA_PASS "bb35aa12"
-
 
 // ======= Hardware =======
 const int LED_PIN = LED_BUILTIN; // Built-in LED on ESP8266 (usually GPIO2), ACTIVE-LOW
@@ -72,10 +82,46 @@ function send(obj){ if(ws.readyState===1){ ws.send(JSON.stringify(obj)); } }
 void handleRoot() { http.send_P(200, "text/html; charset=utf-8", INDEX_HTML); }
 void handleNotFound() { http.send(404, "text/plain", "Not found"); }
 
+// ======= NEW: OLED helpers =======
+void oledShowConnecting() {
+display.clearDisplay();
+display.setTextColor(SSD1306_WHITE);
+display.setTextSize(1);
+display.setCursor(0, 0);
+display.println(F("ESP8266 JSON WS"));
+display.println(F("-------------------"));
+display.println(F("Wi-Fi: connecting"));
+display.print(F("SSID : "));
+display.println(F(STA_SSID));
+display.display();
+}
+
+void oledShowState() {
+display.clearDisplay();
+display.setTextColor(SSD1306_WHITE);
+display.setTextSize(1);
+display.setCursor(0, 0);
+display.println(F("ESP8266 JSON WS"));
+display.println(F("-------------------"));
+display.print(F("IP : "));
+display.println(WiFi.localIP());
+//display.print(F("HTTP: http://"));
+//display.print(WiFi.localIP());
+//display.println(F("/"));
+//display.print(F("WS : ws://"));
+//display.print(WiFi.localIP());
+//display.println(F(":81/"));
+display.println();
+display.print(F("LED : "));
+display.println(led_state ? F("ON") : F("OFF"));
+display.display();
+}
+
 // ======= LED helpers (ESP8266 LED is ACTIVE-LOW) =======
 void applyLed(bool on) {
 digitalWrite(LED_PIN, on ? LOW : HIGH); // LOW = ON, HIGH = OFF
 led_state = on;
+oledShowState(); // update OLED whenever LED changes
 }
 
 // ======= JSON helpers =======
@@ -164,7 +210,19 @@ Serial.begin(9600);
 pinMode(LED_PIN, OUTPUT);
 digitalWrite(LED_PIN, HIGH); // OFF (active-LOW)
 
+// ---- NEW: OLED init ----
+Wire.begin(); // SDA=D2(GPIO4), SCL=D1(GPIO5) on NodeMCU by default
+if (!display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
+Serial.println(F("SSD1306 allocation failed"));
+} else {
+display.clearDisplay();
+oledShowConnecting();
+}
+
 startWiFi();
+
+// Show IP + state on OLED after Wi-Fi up
+oledShowState();
 
 http.on("/", handleRoot);
 http.onNotFound(handleNotFound);

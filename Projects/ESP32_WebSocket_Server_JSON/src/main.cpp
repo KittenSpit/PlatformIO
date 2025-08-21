@@ -4,6 +4,7 @@ ESP32 WebSocket Server with JSON + Broadcast
 - HTTP: http://<ip>/
 - WS: ws://<ip>:81/
 - Requires: arduinoWebSockets, ArduinoJson
+
 */
 #include <Arduino.h>
 #include <WiFi.h>
